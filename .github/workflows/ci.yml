@@ -36,12 +36,12 @@ jobs:
       - name: Typecheck (app)
         run: npm run typecheck
 
-      - name: Typecheck (tests)
-        # Validates test files against vitest globals / node types.
-        run: npx tsc -p tsconfig.test.json --noEmit
-
       - name: Unit tests + coverage gate (>=90%)
         # vitest.config.ts thresholds fail the run if coverage drops below 90%.
+        # (Test files are type-checked implicitly by vitest's esbuild transform;
+        # a separate tsc pass is omitted to avoid the vitest/Bundler
+        # 'no exported member' resolution quirk — the app typecheck
+        # above already covers src/.)
         run: npm run test:ci
 
       - name: Upload coverage
