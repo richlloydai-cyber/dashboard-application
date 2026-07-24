@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { api } from "@/lib/api";
 
 const ok = (body: unknown) => ({
@@ -134,7 +134,7 @@ describe("api client", () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
       ws.onopen?.();
-      await waitFor(() => expect(api.isConnected()).toBe(true));
+      expect(api.isConnected()).toBe(true);
 
       const received: any[] = [];
       api.on("agent.task_updated", (e: any) => received.push(e));
@@ -145,7 +145,7 @@ describe("api client", () => {
       expect(ws.send).toHaveBeenCalled();
 
       ws.onclose?.();
-      await waitFor(() => expect(api.isConnected()).toBe(false));
+      expect(api.isConnected()).toBe(false);
       api.disconnect();
     });
 
