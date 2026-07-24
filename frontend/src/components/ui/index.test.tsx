@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import {
   Button,
   Input,
@@ -153,7 +153,7 @@ describe("ui primitives", () => {
   describe("DropdownMenu", () => {
     it("toggles open + fires item onClick", () => {
       const onA = vi.fn();
-      render(
+      const { container } = render(
         <DropdownMenu
           trigger={<span>Menu</span>}
           items={[
@@ -166,13 +166,16 @@ describe("ui primitives", () => {
         />
       );
       fireEvent.click(screen.getByText("Menu"));
-      const a = screen.getByText("A");
-      fireEvent.click(a);
-      expect(onA).toHaveBeenCalled();
-      // danger + icon + divider present
+      // all items + divider rendered while open
+      expect(screen.getByText("A")).toBeInTheDocument();
+      expect(screen.getByText("B")).toBeInTheDocument();
       expect(screen.getByText("C")).toBeInTheDocument();
       expect(screen.getByText("D")).toBeInTheDocument();
-      // closes after click
+      // divider present
+      expect(container.querySelector('[role="separator"]')).toBeInTheDocument();
+      // clicking A fires + closes the menu
+      fireEvent.click(screen.getByText("A"));
+      expect(onA).toHaveBeenCalled();
       expect(screen.queryByText("A")).not.toBeInTheDocument();
     });
     it("does not fire onClick on disabled item", () => {
@@ -219,26 +222,23 @@ describe("ui primitives", () => {
   });
 
   describe("Tooltip", () => {
-    it("shows on hover after delay, hides on leave", async () => {
-      vi.useFakeTimers();
+    it("shows on hover, hides on leave", async () => {
       render(
         <Tooltip content="Hi there" position="bottom">
           <span>Hover</span>
         </Tooltip>
       );
       fireEvent.mouseEnter(screen.getByText("Hover"));
-      vi.advanceTimersByTime(200);
-      expect(screen.getByRole("tooltip")).toHaveTextContent("Hi there");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Hi there");
       fireEvent.mouseLeave(screen.getByText("Hover"));
-      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-      vi.useRealTimers();
+      await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
     });
-    it("positions left/right", () => {
+    it("positions left/right", async () => {
       const { rerender } = render(
         <Tooltip content="L" position="left"><span>x</span></Tooltip>
       );
       fireEvent.mouseEnter(screen.getByText("x"));
-      expect(screen.getByRole("tooltip")).toBeInTheDocument();
+      expect(await screen.findByRole("tooltip")).toBeInTheDocument();
       rerender(<Tooltip content="R" position="right"><span>x</span></Tooltip>);
       expect(screen.getByRole("tooltip")).toBeInTheDocument();
     });
@@ -255,16 +255,17 @@ describe("ui primitives", () => {
   });
 
   describe("Progress", () => {
-    it("renders bar + clamps percentage", () => {
-      const { rerender } = render(<Progress value={50} data-testid="p" />);
-      const bar = document.querySelector('[role="progressbar"]') as HTMLElement;
-      expect(bar.getAttribute("aria-valuenow")).toBe("50");
+    it("renders bar + clamps percentage + label", () => {
+      const { rerender, container } = render(<Progress value={50} />);
+      const bar = () => container.querySelector('[role="progressbar"]') as HTMLElement;
+      expect(bar().getAttribute("aria-valuenow")).toBe("50");
       rerender(<Progress value={150} max={100} />);
-      expect((document.querySelector('[role="progressbar"]') as HTMLElement).style.width).toBe("100%");
-      render(<Progress value={40} showLabel />);
+      expect(bar().style.width).toBe("100%");
+      rerender(<Progress value={40} showLabel />);
       expect(screen.getByText("40")).toBeInTheDocument();
-      render(<Progress value={10} variant="danger" size="lg" />);
-      expect(screen.getByText("10")).toBeInTheDocument();
+      expect(screen.getByText("100")).toBeInTheDocument();
+      rerender(<Progress value={10} variant="danger" size="lg" />);
+      expect(bar().getAttribute("aria-valuenow")).toBe("10");
     });
   });
 
@@ -314,8 +315,8 @@ describe("ui primitives", () => {
       render(
         <>
           <StatusIndicator status="success" label="OK" />
-          <StatusIndicator status="fail" size="lg" />
-          <StatusIndicator status="running" showDot={false} />
+          <StatusIndicator status="fail" label="fail" size="lg" />
+          <StatusIndicator status="running" label="running" showDot={false} />
         </>
       );
       expect(screen.getByText("OK")).toBeInTheDocument();

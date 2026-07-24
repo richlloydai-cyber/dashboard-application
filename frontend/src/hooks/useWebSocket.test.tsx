@@ -97,7 +97,7 @@ describe("useWebSocket", () => {
     const onDisconnect = vi.fn();
     const onError = vi.fn();
 
-    renderHook(() =>
+    const { result } = renderHook(() =>
       useWebSocket({ projectId: "coder-board", autoConnect: true, onDisconnect, onError })
     );
     const ws: any = (globalThis as any).__ws;
@@ -113,6 +113,8 @@ describe("useWebSocket", () => {
     });
     expect(useProjectStore.getState().wsConnected).toBe(false);
     expect(onDisconnect).toHaveBeenCalled();
+    // disconnect is a no-op after close (socket already null)
+    expect(() => result.current.disconnect()).not.toThrow();
 
     // error path
     act(() => {

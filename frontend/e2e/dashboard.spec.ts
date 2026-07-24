@@ -1,45 +1,58 @@
 import { test, expect } from "@playwright/test";
 
-// Live data only — no mocks. The dashboard reads straight from the
-// Hermes adapter, so these tests assert real board content.
-test.describe("Hermes dashboard (live)", () => {
-  test("title bar + live-data indicator render", async ({ page }) => {
+// Self-contained E2E — NO external tunnel, NO mocks.
+// The CI job builds the app with basePath=/projects and proxies
+// /projects/api -> the locally-running Hermes adapter (seeded with
+// committed fixture boards). The adapter serves REAL live data, so
+// these tests assert against the actual fixture content, never
+// against "Sample data".
+
+// Fixture board slugs / display names (see test/fixtures/boards).
+const BOARDS = [
+  { slug: "e2e-coder", name: "E2E Coder" },
+  { slug: "e2e-product", name: "E2E Product" },
+  { slug: "e2e-research", name: "E2E Research" },
+];
+
+test.describe("Hermes dashboard (live, self-contained)", () => {
+  test("title bar + no mock/sample-data indicator", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Hermes Project Control")).toBeVisible();
-    // The header must show a live/error state, never "Sample data".
-    await expect(page.getByText("Sample data")).toHaveCount(0);
+    // The app must never fall back to mock/sample data.
+    await expect(page.getByText("Sample data", { exact: false })).toHaveCount(0);
   });
 
-  test("project list is populated from the live adapter", async ({ page }) => {
+  test("sidebar lists the live fixture boards", async ({ page }) => {
     await page.goto("/");
-    // The sidebar lists the live Hermes boards.
-    await expect(page.getByText("coder-board")).toBeVisible();
-    await expect(page.getByText("product-board")).toBeVisible();
+    for (const b of BOARDS) {
+      await expect(page.getByText(b.name, { exact: false })).toBeVisible();
+    }
   });
 
-  test("selecting a project opens its three pillars", async ({ page }) => {
+  test("selecting a board opens its three pillars", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("coder-board").click();
-    await expect(page.getByText("Integrate")).toBeVisible();
-    await expect(page.getByText("Deliver")).toBeVisible();
-    await expect(page.getByText("Operate")).toBeVisible();
+    await page.getByText("E2E Coder", { exact: false }).click();
+    await expect(page.getByRole("button", { name: "Build Pipelines" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Quality Gates" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Deployments" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Agent Tasks" })).toBeVisible();
   });
 
   test("pillar navigation switches the active view", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("coder-board").click();
-    await page.getByRole("button", { name: "Build Pipelins" }).click();
-    // Either a real pipeline or the honest empty state — but never mock data.
-    const build = page.getByText(/No pipelines configured|CI|multi-tenant CI/);
-    await expect(build.first()).toBeVisible();
+    await page.getByText("E2E Coder", { exact: false }).click();
+    await page.getByRole("button", { name: "Build Pipelines" }).click();
+    // The build pillar shows either a real pipeline or the honest empty state.
+    await expect(
+      page.getByText(/No pipelines configured|CI|multi-tenant CI/)
+    ).toBeVisible();
   });
 
-  test("no project selected shows the empty state", async ({ page }) => {
+  test("board detail shows live task data", async ({ page }) => {
     await page.goto("/");
-    // If somehow no project is selected, the dashboard says so.
-    const empty = page.getByText("No project selected");
-    if (await empty.count()) {
-      await expect(empty).toBeVisible();
-    }
+    await page.getByText("E2E Coder", { exact: false }).click();
+    await page.getByRole("button", { name: "Agent Tasks" }).click();
+    // One of the fixture tasks (real, from kanban.db).
+    await expect(page.getByText("Add rate-limiting to gateway")).toBeVisible();
   });
 });
