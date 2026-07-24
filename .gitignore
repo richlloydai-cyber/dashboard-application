@@ -1,0 +1,28 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env
+.env
+.env.local
+.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tunnel / runtime artefacts (not part of the app source)
+cloudflared
+*.tar.gz
+
+# Docker/deployment extras kept out of the local-run repo
+.next/standalone/

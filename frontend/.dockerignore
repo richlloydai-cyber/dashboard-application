@@ -1,0 +1,10 @@
+# Frontend Docker build context ignore
+node_modules
+.next
+.git
+coverage
+*.log
+.env*.local
+README.md
+.dockerignore
+Dockerfile
