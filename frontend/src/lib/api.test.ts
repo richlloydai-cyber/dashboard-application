@@ -133,6 +133,7 @@ describe("api client", () => {
     it("connect constructs a socket and dispatches messages", () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
+      ws.readyState = 1; // WebSocket.OPEN
       expect(ws).toBeDefined();
       expect(ws.url).toContain("project=coder-board");
 
