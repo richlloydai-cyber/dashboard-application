@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useProjectStore } from "@/lib/store";
 import type { Project } from "@/types";
@@ -19,7 +19,7 @@ describe("<Sidebar />", () => {
     useProjectStore.getState().setProjects([p("coder-board"), p("product-board", "inactive")]);
     render(<Sidebar />);
     expect(screen.getByText("Overview")).toBeInTheDocument();
-    expect(screen.getByText("Build Pipelins")).toBeInTheDocument();
+    expect(screen.getByText("Build Pipelines")).toBeInTheDocument();
     expect(screen.getByText(/Projects \(2\)/)).toBeInTheDocument();
   });
 
@@ -41,16 +41,15 @@ describe("<Sidebar />", () => {
     useProjectStore.getState().setProjects([p("coder-board")]);
     useProjectStore.getState().setSelectedProject(p("coder-board"));
     useProjectStore.getState().setSelectedPillar("build");
-    const { container } = render(<Sidebar />);
-    // The build pillar button should carry the active class.
-    const buildBtn = screen.getByText("Build Pipelins").closest("button")!;
+    render(<Sidebar />);
+    const buildBtn = screen.getByText("Build Pipelines").closest("button")!;
     expect(buildBtn.className).toContain("bg-primary-50");
   });
 
   it("toggles sidebar open state via backdrop", () => {
     useProjectStore.getState().setSidebarOpen(true);
     render(<Sidebar />);
-    const backdrop = screen.getByLabelText("true", { selector: "[aria-hidden]" });
+    const backdrop = screen.getByText("Hermes").closest("aside")!.querySelector<HTMLElement>("[aria-hidden='true']")!;
     fireEvent.click(backdrop);
     expect(useProjectStore.getState().ui.sidebarOpen).toBe(false);
   });

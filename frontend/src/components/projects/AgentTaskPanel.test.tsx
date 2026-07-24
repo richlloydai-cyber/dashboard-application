@@ -20,12 +20,13 @@ const task = (over: Partial<AgentTask> = {}): AgentTask => ({
 describe("<AgentTaskPanel />", () => {
   it("renders the agent roster + active tasks", () => {
     render(<AgentTaskPanel agents={[agent(), agent({ id: "po", name: "PO", status: "idle" })]} tasks={[task()]} />);
-    expect(screen.getByText("Coder")).toBeInTheDocument();
+    // "Coder" appears in both the roster and the task's agent name.
+    expect(screen.getAllByText("Coder")).toHaveLength(2);
     expect(screen.getByText("PO")).toBeInTheDocument();
     expect(screen.getByText("Active tasks")).toBeInTheDocument();
     expect(screen.getByText("Fix the thing")).toBeInTheDocument();
     expect(screen.getByText("42%")).toBeInTheDocument();
-    expect(screen.getByText(/1.2K tok/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.2K tok/)).toBeInTheDocument();
   });
 
   it("shows 'No active agent tasks' when none active", () => {

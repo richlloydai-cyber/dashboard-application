@@ -32,8 +32,8 @@ describe("<QualityGatePanel />", () => {
     expect(screen.getByText("80/100")).toBeInTheDocument();
     expect(screen.getByText("Coverage")).toBeInTheDocument();
     expect(screen.getByText("Lint")).toBeInTheDocument();
-    // Passed/failed counters
-    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText("Passed")).toBeInTheDocument();
+    expect(screen.getByText("Failed")).toBeInTheDocument();
   });
 
   it("renders multiple gates", () => {

@@ -21,11 +21,11 @@ const dep = (over: Partial<Deployment> = {}): Deployment => ({
 describe("<DeploymentPanel />", () => {
   it("renders environments + a deployment with health check", () => {
     render(<DeploymentPanel environments={[env(), env({ id: "prod", name: "production", type: "production", protected: true, approvalRequired: true })]} deployments={[dep()]} />);
-    expect(screen.getByText("development")).toBeInTheDocument();
+    // "development" appears in both the env chip and the deployment row.
+    expect(screen.getAllByText("development")).toHaveLength(2);
     expect(screen.getByText("production")).toBeInTheDocument();
     expect(screen.getByText("v1.2.3")).toBeInTheDocument();
     expect(screen.getByText("HTTP health")).toBeInTheDocument();
-    // Rollback button shows for success
     expect(screen.getByText("Rollback")).toBeInTheDocument();
   });
 

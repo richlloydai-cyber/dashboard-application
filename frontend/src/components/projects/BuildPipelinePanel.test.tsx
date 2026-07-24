@@ -27,13 +27,14 @@ describe("<BuildPipelinePanel />", () => {
     expect(screen.getByText(/No pipelines configured/)).toBeInTheDocument();
   });
 
-  it("renders pipeline name + run number + stages", () => {
+  it("renders pipeline name, run number, success rate + trend", () => {
     render(<BuildPipelinePanel pipelines={[pipe()]} />);
     expect(screen.getByText("CI")).toBeInTheDocument();
     expect(screen.getByText("#13")).toBeInTheDocument();
-    expect(screen.getByText("typecheck")).toBeInTheDocument();
-    expect(screen.getByText("build")).toBeInTheDocument();
     expect(screen.getByText("100%")).toBeInTheDocument();
+    expect(screen.getByText("stable")).toBeInTheDocument();
+    expect(screen.getByText("13 runs")).toBeInTheDocument();
+    expect(screen.getByText("abc")).toBeInTheDocument();
   });
 
   it("renders multiple pipelines", () => {
