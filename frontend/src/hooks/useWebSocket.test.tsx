@@ -3,8 +3,10 @@ import { renderHook, act } from "@testing-library/react";
 import { useWebSocket, useEventSource } from "@/hooks/useWebSocket";
 import { useProjectStore } from "@/lib/store";
 
-// jsdom has no WebSocket/EventSource globals; the hook reads
-// `WebSocket.OPEN` at mount, so we always provide a stub.
+// jsdom has no WebSocket/EventSource globals; the hooks read
+// `WebSocket.OPEN` / `EventSource` at mount, so we always provide stubs.
+// The fake socket auto-fires onopen in a microtask so the hook's own
+// `onopen` handler runs naturally (no manual invocation needed).
 class FakeSocket {
   static OPEN = 1;
   static CLOSED = 3;
@@ -19,6 +21,7 @@ class FakeSocket {
   constructor(u: string) {
     this.url = u;
     (globalThis as any).__ws = this;
+    queueMicrotask(() => this.onopen?.());
   }
 }
 
@@ -31,6 +34,7 @@ class FakeEventSource {
   constructor(u: string) {
     this.url = u;
     (globalThis as any).__es = this;
+    queueMicrotask(() => this.onopen?.());
   }
 }
 
@@ -49,9 +53,9 @@ describe("useWebSocket", () => {
     delete process.env["NEXT_PUBLIC_HERMES_API"];
   });
 
-  it("does not connect without an explicit WS url", () => {
+  it("does not connect without an explicit WS url", async () => {
     const { result } = renderHook(() => useWebSocket({ autoConnect: true }));
-    // No throw; wsConnected stays false (no socket opened).
+    await Promise.resolve();
     expect(result.current.isConnected).toBe(false);
     expect((globalThis as any).__ws).toBeUndefined();
   });
@@ -65,11 +69,8 @@ describe("useWebSocket", () => {
       useWebSocket({ projectId: "coder-board", autoConnect: true, onConnect })
     );
     const ws: any = (globalThis as any).__ws;
-    act(() => {
-      ws.onopen?.();
-    });
-    // onopen flips the store's wsConnected (reliable signal).
-    expect(useProjectStore.getState().wsConnected).toBe(true);
+    await Promise.resolve();
+    expect(result.current.isConnected).toBe(true);
     expect(onConnect).toHaveBeenCalled();
 
     // Route a build event into the store.
@@ -107,16 +108,14 @@ describe("useEventSource", () => {
     delete process.env["NEXT_PUBLIC_HERMES_API"];
   });
 
-  it("connects an EventSource and surfaces messages", () => {
+  it("connects an EventSource and surfaces messages", async () => {
     process.env["NEXT_PUBLIC_HERMES_API"] = "http://localhost:3801";
     const onMessage = vi.fn();
     const { result } = renderHook(() =>
       useEventSource("coder-board", { onMessage })
     );
     const es: any = (globalThis as any).__es;
-    act(() => {
-      es.onopen?.();
-    });
+    await Promise.resolve();
     expect(result.current.isConnected).toBe(true);
     act(() => {
       es.onmessage?.({ data: "hello" });

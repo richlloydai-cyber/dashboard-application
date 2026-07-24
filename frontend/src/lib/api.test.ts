@@ -117,6 +117,11 @@ describe("api client", () => {
         close = vi.fn();
         constructor(public url: string) {
           (globalThis as any).__lastWs = this;
+          // Auto-open so the hook's onopen handler runs naturally.
+          queueMicrotask(() => {
+            this.readyState = 1; // OPEN
+            this.onopen?.();
+          });
         }
       };
       (globalThis as any).window = { location: { origin: "http://localhost:3000" } };
@@ -133,8 +138,7 @@ describe("api client", () => {
     it("connect opens a socket and dispatches messages", async () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
-      ws.readyState = 1; // WebSocket.OPEN
-      ws.onopen?.();
+      await Promise.resolve();
       expect(api.isConnected()).toBe(true);
 
       const received: any[] = [];
