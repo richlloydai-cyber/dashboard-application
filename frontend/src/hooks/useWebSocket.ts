@@ -112,10 +112,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = new URL(
-      process.env['NEXT_PUBLIC_WS_URL'] || "/projects/ws",
-      window.location.origin
-    );
+    // WebSocket is OPT-IN: only connect if an explicit WS URL is configured.
+    // The Hermes adapter serves HTTP + SSE (no WebSocket), and live data comes
+    // from the REST API, so in local dev we skip WS entirely to avoid noisy
+    // connection errors and endless reconnect loops.
+    const configuredWsUrl = process.env['NEXT_PUBLIC_WS_URL'];
+    if (!configuredWsUrl) {
+      return;
+    }
+
+    const wsUrl = new URL(configuredWsUrl, window.location.origin);
     if (projectId) {
       wsUrl.searchParams.set("project", projectId);
     }

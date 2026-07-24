@@ -125,6 +125,15 @@ export function useProjectPillarData(projectId: string | undefined) {
 
   useEffect(() => {
     load();
+
+    // Poll for live updates. WebSocket/SSE aren't used in local dev (the adapter
+    // serves REST + SSE only, and polling is the most robust cross-origin path).
+    // Set NEXT_PUBLIC_POLL_MS=0 to disable.
+    const pollMs = Number(process.env['NEXT_PUBLIC_POLL_MS'] ?? "15000");
+    if (!pollMs || Number.isNaN(pollMs)) return;
+
+    const id = setInterval(load, pollMs);
+    return () => clearInterval(id);
   }, [load]);
 
   return { data, source, error, reload: load };
