@@ -106,30 +106,28 @@ describe("api client", () => {
   });
 
   describe("websocket (browser only)", () => {
-    it("connect opens a socket and dispatches messages", async () => {
-      const fakeWs = {
-        readyState: 0,
-        send: vi.fn(),
-        close: vi.fn(),
-        onopen: null as any,
-        onmessage: null as any,
-        onclose: null as any,
-        onerror: null as any,
-      };
+    beforeEach(() => {
       (globalThis as any).WebSocket = class {
         static OPEN = 1;
         static CLOSED = 3;
         readyState = 0;
         onopen: any; onmessage: any; onclose: any; onerror: any;
+        send = vi.fn();
+        close = vi.fn();
         constructor(public url: string) {
-          fakeWs.readyState = 0;
           (globalThis as any).__lastWs = this;
         }
-        send = fakeWs.send;
-        close = fakeWs.close;
       };
       (globalThis as any).window = { location: { origin: "http://localhost:3000" } };
+      process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
+    });
+    afterEach(() => {
+      delete (globalThis as any).WebSocket;
+      delete (globalThis as any).window;
+      delete process.env["NEXT_PUBLIC_WS_URL"];
+    });
 
+    it("connect opens a socket and dispatches messages", () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
       ws.onopen?.();
@@ -141,7 +139,7 @@ describe("api client", () => {
       expect(received).toHaveLength(1);
 
       api.send({ a: 1 });
-      expect(fakeWs.send).toHaveBeenCalled();
+      expect(ws.send).toHaveBeenCalled();
 
       ws.onclose?.();
       expect(api.isConnected()).toBe(false);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useWebSocket, useEventSource } from "@/hooks/useWebSocket";
 import { useProjectStore } from "@/lib/store";
 
@@ -68,7 +68,7 @@ describe("useWebSocket", () => {
     act(() => {
       ws.onopen?.();
     });
-    expect(result.current.isConnected).toBe(true);
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
     expect(onConnect).toHaveBeenCalled();
 
     // Route a build event into the store.

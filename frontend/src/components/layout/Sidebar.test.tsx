@@ -48,8 +48,9 @@ describe("<Sidebar />", () => {
 
   it("toggles sidebar open state via backdrop", () => {
     useProjectStore.getState().setSidebarOpen(true);
-    render(<Sidebar />);
-    const backdrop = screen.getByText("Hermes").closest("aside")!.querySelector<HTMLElement>("[aria-hidden='true']")!;
+    const { container } = render(<Sidebar />);
+    const backdrop = container.querySelector<HTMLElement>("[aria-hidden='true']")!;
+    expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop);
     expect(useProjectStore.getState().ui.sidebarOpen).toBe(false);
   });

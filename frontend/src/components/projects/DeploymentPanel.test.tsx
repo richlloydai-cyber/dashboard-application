@@ -24,7 +24,7 @@ describe("<DeploymentPanel />", () => {
     // "development" appears in both the env chip and the deployment row.
     expect(screen.getAllByText("development")).toHaveLength(2);
     expect(screen.getByText("production")).toBeInTheDocument();
-    expect(screen.getByText("v1.2.3")).toBeInTheDocument();
+    expect(screen.getAllByText("v1.2.3")).toHaveLength(2);
     expect(screen.getByText("HTTP health")).toBeInTheDocument();
     expect(screen.getByText("Rollback")).toBeInTheDocument();
   });
