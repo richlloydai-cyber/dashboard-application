@@ -56,7 +56,7 @@ describe("useWebSocket", () => {
     expect((globalThis as any).__ws).toBeUndefined();
   });
 
-  it("opens a socket + routes events when a WS url is configured", () => {
+  it("opens a socket + routes events when a WS url is configured", async () => {
     (globalThis as any).WebSocket = FakeSocket;
     process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
 

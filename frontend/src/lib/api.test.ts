@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { api } from "@/lib/api";
 
 const ok = (body: unknown) => ({
@@ -120,18 +121,20 @@ describe("api client", () => {
       };
       (globalThis as any).window = { location: { origin: "http://localhost:3000" } };
       process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
+      api.disconnect();
     });
     afterEach(() => {
+      api.disconnect();
       delete (globalThis as any).WebSocket;
       delete (globalThis as any).window;
       delete process.env["NEXT_PUBLIC_WS_URL"];
     });
 
-    it("connect opens a socket and dispatches messages", () => {
+    it("connect opens a socket and dispatches messages", async () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
       ws.onopen?.();
-      expect(api.isConnected()).toBe(true);
+      await waitFor(() => expect(api.isConnected()).toBe(true));
 
       const received: any[] = [];
       api.on("agent.task_updated", (e: any) => received.push(e));
@@ -142,7 +145,7 @@ describe("api client", () => {
       expect(ws.send).toHaveBeenCalled();
 
       ws.onclose?.();
-      expect(api.isConnected()).toBe(false);
+      await waitFor(() => expect(api.isConnected()).toBe(false));
       api.disconnect();
     });
 

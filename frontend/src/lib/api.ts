@@ -317,6 +317,8 @@ class ApiClient {
   // ============================================================
 
   connect(projectId?: string): void {
+    // Don't crash if the runtime has no WebSocket (e.g. SSR / jsdom).
+    if (typeof WebSocket === "undefined") return;
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
     const url = new URL(WS_URL, window.location.origin);
