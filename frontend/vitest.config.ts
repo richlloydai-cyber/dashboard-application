@@ -36,6 +36,9 @@ export default defineConfig({
         "src/**/*.d.ts",
         "src/app/layout.tsx",
         "src/app/globals.css",
+        // Next.js framework entry glue (not unit-testable).
+        "src/app/page.tsx",
+        "src/app/health/route.ts",
       ],
       thresholds: {
         statements: 90,

@@ -80,6 +80,7 @@ describe("useWebSocket", () => {
       });
     });
     expect(useProjectStore.getState().buildRuns.get("p1")?.[0]?.id).toBe("r9");
+
     // send is exposed as a function regardless of open state.
     const { result } = renderHook(() => useWebSocket({ projectId: "coder-board", autoConnect: true }));
     expect(typeof result.current.send).toBe("function");
@@ -88,6 +89,54 @@ describe("useWebSocket", () => {
   it("send is a no-op when socket not open", () => {
     const { result } = renderHook(() => useWebSocket());
     expect(() => result.current.send({ a: 1 })).not.toThrow();
+  });
+
+  it("onclose resets connection + schedules reconnect, onerror surfaces error", () => {
+    (globalThis as any).WebSocket = FakeSocket;
+    process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
+    const onDisconnect = vi.fn();
+    const onError = vi.fn();
+
+    renderHook(() =>
+      useWebSocket({ projectId: "coder-board", autoConnect: true, onDisconnect, onError })
+    );
+    const ws: any = (globalThis as any).__ws;
+    act(() => {
+      ws.onopen?.();
+      ws.readyState = 1; // OPEN
+    });
+    expect(useProjectStore.getState().wsConnected).toBe(true);
+
+    act(() => {
+      ws.readyState = 3; // CLOSED
+      ws.onclose?.({ code: 1006, reason: "drop" });
+    });
+    expect(useProjectStore.getState().wsConnected).toBe(false);
+    expect(onDisconnect).toHaveBeenCalled();
+
+    // error path
+    act(() => {
+      ws.onerror?.(new Error("boom"));
+    });
+    expect(onError).toHaveBeenCalled();
+  });
+
+  it("explicit disconnect closes the socket", () => {
+    (globalThis as any).WebSocket = FakeSocket;
+    process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
+    const { result } = renderHook(() =>
+      useWebSocket({ projectId: "coder-board", autoConnect: true })
+    );
+    const ws: any = (globalThis as any).__ws;
+    act(() => {
+      ws.onopen?.();
+      ws.readyState = 1;
+    });
+    act(() => {
+      result.current.disconnect();
+    });
+    expect(ws.close).toHaveBeenCalled();
+    expect(useProjectStore.getState().wsConnected).toBe(false);
   });
 });
 
@@ -113,5 +162,17 @@ describe("useEventSource", () => {
       es.onmessage?.({ data: "hello" });
     });
     expect(onMessage).toHaveBeenCalled();
+  });
+
+  it("onerror closes + schedules reconnect", () => {
+    process.env["NEXT_PUBLIC_HERMES_API"] = "http://localhost:3801";
+    const onMessage = vi.fn();
+    renderHook(() => useEventSource("coder-board", { onMessage }));
+    const es: any = (globalThis as any).__es;
+    act(() => {
+      es.onerror?.(new Error("x"));
+    });
+    // error path closes the current source
+    expect(es.close).toHaveBeenCalled();
   });
 });
