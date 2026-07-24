@@ -51,7 +51,11 @@ export function useLiveProjects() {
         setProjects(res.data);
         setSource("live");
         setError("projects", null);
-        if (!selectedProject) setSelectedProject(res.data[0]!);
+        // Always re-select from the live list. A previously persisted
+        // selection (e.g. a stale mock project) must not survive when the
+        // adapter is reachable.
+        const stillValid = selectedProject && res.data.some((p) => p.id === selectedProject.id);
+        if (!stillValid) setSelectedProject(res.data[0]!);
       } else {
         // No live data available — surface it, do NOT invent sample data.
         setError(
