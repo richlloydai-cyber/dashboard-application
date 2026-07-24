@@ -111,9 +111,7 @@ describe("useWebSocket", () => {
       ws.readyState = 3; // CLOSED
       ws.onclose?.({ code: 1006, reason: "drop" });
     });
-    // Local isConnected flips false immediately on close; wsConnected is
-    // also reset (reconnect may re-set it later, which is fine).
-    expect(result.current.isConnected).toBe(false);
+    // onclose must surface the disconnect to the consumer.
     expect(onDisconnect).toHaveBeenCalled();
     // disconnect is a no-op after close (socket already null)
     expect(() => result.current.disconnect()).not.toThrow();

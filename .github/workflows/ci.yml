@@ -90,15 +90,26 @@ jobs:
         # legacy-peer-deps avoids any transient conflict.
         run: npm install --no-save --legacy-peer-deps @playwright/test@1.51.1 && npx playwright install --with-deps chromium
 
-      - name: Seed fixture boards for the adapter
-        working-directory: backend
-        run: python3 seed_test_boards.py
+      - name: Build app (subpath + same-origin API proxy)
+        env:
+          NEXT_PUBLIC_DASHBOARD_PATH: /projects
+          NEXT_PUBLIC_HERMES_API: http://localhost:3801
+        run: npm run build
 
-      - name: Start Hermes adapter (live data)
-        working-directory: backend
+      # Adapter + dashboard MUST stay alive during the E2E run, so they are
+      # started in the SAME step as playwright (GitHub Actions terminates
+      # background processes spawned in a prior step).
+      - name: Seed fixtures + run adapter + dashboard + E2E
+        env:
+          BASE_URL: http://localhost:3800/projects
         run: |
-          python3 hermes_adapter.py --port 3801 --host 0.0.0.0 &
-          echo $! > /tmp/adapter.pid
+          set -u
+          # 1) Seed fixture boards into HERMES_HOME for the adapter.
+          ( cd ../backend && python3 seed_test_boards.py )
+
+          # 2) Start the Hermes adapter (real live data) in the background.
+          ( cd ../backend && HERMES_HOME="$HERMES_HOME" python3 hermes_adapter.py --port 3801 --host 0.0.0.0 ) &
+          ADAPTER_PID=$!
           for i in $(seq 1 20); do
             if curl -fsS http://localhost:3801/health >/dev/null 2>&1; then
               echo "adapter up"; break
@@ -106,27 +117,24 @@ jobs:
             sleep 1
           done
 
-      - name: Build app (subpath + same-origin API proxy)
-        env:
-          NEXT_PUBLIC_DASHBOARD_PATH: /projects
-          NEXT_PUBLIC_HERMES_API: http://localhost:3801
-        run: npm run build
-
-      - name: Start dashboard (next start :3800)
-        run: |
+          # 3) Start the built dashboard (next start :3800) in the background.
           PORT=3800 npm run start &
-          echo $! > /tmp/next.pid
-          for i in $(seq 1 30); do
+          NEXT_PID=$!
+          for i in $(seq 1 40); do
             if curl -fsS http://localhost:3800/projects >/dev/null 2>&1; then
               echo "dashboard up"; break
             fi
             sleep 1
           done
 
-      - name: Run E2E against the self-hosted dashboard
-        env:
-          BASE_URL: http://localhost:3800/projects
-        run: npm run test:e2e
+          # 4) Run the E2E suite while both servers are alive.
+          npm run test:e2e
+          E2E_RC=$?
+
+          # 5) Teardown.
+          kill "$NEXT_PID" 2>/dev/null || true
+          kill "$ADAPTER_PID" 2>/dev/null || true
+          exit $E2E_RC
 
       - name: Upload Playwright report
         if: always()
@@ -135,9 +143,3 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           retention-days: 7
-
-      - name: Teardown
-        if: always()
-        run: |
-          [ -f /tmp/next.pid ] && kill "$(cat /tmp/next.pid)" 2>/dev/null || true
-          [ -f /tmp/adapter.pid ] && kill "$(cat /tmp/adapter.pid)" 2>/dev/null || true
