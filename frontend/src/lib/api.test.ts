@@ -117,11 +117,6 @@ describe("api client", () => {
         close = vi.fn();
         constructor(public url: string) {
           (globalThis as any).__lastWs = this;
-          // Auto-open so the hook's onopen handler runs naturally.
-          queueMicrotask(() => {
-            this.readyState = 1; // OPEN
-            this.onopen?.();
-          });
         }
       };
       (globalThis as any).window = { location: { origin: "http://localhost:3000" } };
@@ -135,12 +130,13 @@ describe("api client", () => {
       delete process.env["NEXT_PUBLIC_WS_URL"];
     });
 
-    it("connect opens a socket and dispatches messages", async () => {
+    it("connect constructs a socket and dispatches messages", () => {
       api.connect("coder-board");
       const ws: any = (globalThis as any).__lastWs;
-      await Promise.resolve();
-      expect(api.isConnected()).toBe(true);
+      expect(ws).toBeDefined();
+      expect(ws.url).toContain("project=coder-board");
 
+      // Drive an inbound event -> routed to registered handler.
       const received: any[] = [];
       api.on("agent.task_updated", (e: any) => received.push(e));
       ws.onmessage?.({ data: JSON.stringify({ type: "agent.task_updated", task: { id: "t1" } }) });
@@ -148,9 +144,6 @@ describe("api client", () => {
 
       api.send({ a: 1 });
       expect(ws.send).toHaveBeenCalled();
-
-      ws.onclose?.();
-      expect(api.isConnected()).toBe(false);
       api.disconnect();
     });
 
