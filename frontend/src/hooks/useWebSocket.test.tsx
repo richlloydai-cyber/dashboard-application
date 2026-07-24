@@ -68,7 +68,8 @@ describe("useWebSocket", () => {
     act(() => {
       ws.onopen?.();
     });
-    expect(result.current.isConnected).toBe(true);
+    // onopen flips the store's wsConnected (reliable signal).
+    expect(useProjectStore.getState().wsConnected).toBe(true);
     expect(onConnect).toHaveBeenCalled();
 
     // Route a build event into the store.
