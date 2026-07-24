@@ -2,23 +2,16 @@
 
 // ============================================================
 // HERMES DASHBOARD - LIVE PROJECT DATA HOOK
-// Fetches projects + per-project pillar data from the live
-// Hermes adapter API, with graceful fallback to mock data
-// when the backend is unreachable.
+// Fetches projects + per-project pillar data exclusively from
+// the live Hermes adapter API. There is NO fall-back to mock
+// data — if the backend is unreachable the dashboard shows an
+// explicit error state so stale/fake figures never masquerade
+// as live data.
 // ============================================================
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useProjectStore } from "@/lib/store";
-import {
-  mockProjects,
-  mockPipelines,
-  mockQualityGates,
-  mockEnvironments,
-  mockDeployments,
-  mockAgents,
-  mockAgentTasks,
-} from "@/lib/mock-data";
 import type {
   BuildPipeline,
   QualityGate,
@@ -37,12 +30,14 @@ export interface ProjectPillarData {
   tasks: AgentTask[];
 }
 
-export type DataSource = "live" | "mock" | "loading";
+// "error" replaces the old "mock": the backend is down or returned no data.
+export type DataSource = "live" | "error" | "loading";
 
 export function useLiveProjects() {
   const setProjects = useProjectStore((s) => s.setProjects);
   const setSelectedProject = useProjectStore((s) => s.setSelectedProject);
   const selectedProject = useProjectStore((s) => s.selectedProject);
+  const setError = useProjectStore((s) => s.setError);
   const [source, setSource] = useState<DataSource>("loading");
 
   useEffect(() => {
@@ -55,14 +50,15 @@ export function useLiveProjects() {
       if (res.data && res.data.length > 0) {
         setProjects(res.data);
         setSource("live");
+        setError("projects", null);
         if (!selectedProject) setSelectedProject(res.data[0]!);
       } else {
-        // Backend unreachable or empty — fall back to mock data.
-        setProjects(mockProjects);
-        setSource("mock");
-        if (!selectedProject && mockProjects.length > 0) {
-          setSelectedProject(mockProjects[0]!);
-        }
+        // No live data available — surface it, do NOT invent sample data.
+        setError(
+          "projects",
+          res.error?.message ?? "No projects returned by the live adapter.",
+        );
+        setSource("error");
       }
     })();
 
@@ -87,49 +83,46 @@ export function useProjectPillarData(projectId: string | undefined) {
     }
     setSource("loading");
 
-    const [pipelines, gates, envs, deployments, agents, tasks] = await Promise.all([
-      api.getPipelines(projectId),
-      api.getQualityGates(projectId),
-      api.getEnvironments(projectId),
-      api.getDeployments(projectId),
-      api.getAgentStatuses(projectId),
-      api.getAgentTasks(projectId),
-    ]);
+    // Fetch every pillar in parallel from the live adapter.
+    const [pipelines, gates, envs, deployments, agents, tasks] = await Promise.all(
+      [
+        api.getPipelines(projectId),
+        api.getQualityGates(projectId),
+        api.getEnvironments(projectId),
+        api.getDeployments(projectId),
+        api.getAgentStatuses(projectId),
+        api.getAgentTasks(projectId),
+      ],
+    );
 
-    // If the tasks call succeeded (the always-present live endpoint), treat as live.
-    if (tasks.data !== null) {
-      setData({
-        pipelines: pipelines.data ?? [],
-        gates: gates.data ?? [],
-        environments: envs.data ?? [],
-        deployments: deployments.data ?? [],
-        agents: agents.data ?? [],
-        tasks: tasks.data ?? [],
-      });
-      setSource("live");
-      setError(null);
-    } else {
-      // Fallback to scoped mock data.
-      setData({
-        pipelines: mockPipelines.filter((p) => p.projectId === projectId),
-        gates: mockQualityGates.filter((g) => g.projectId === projectId),
-        environments: mockEnvironments,
-        deployments: mockDeployments.filter((d) => d.projectId === projectId),
-        agents: mockAgents,
-        tasks: mockAgentTasks.filter((t) => t.projectId === projectId),
-      });
-      setSource("mock");
-      setError(tasks.error?.message ?? "backend unreachable");
+    // A genuine network/HTTP failure on the core endpoint means no live data.
+    if (tasks.error) {
+      setData(null);
+      setSource("error");
+      setError(tasks.error.message);
+      return;
     }
+
+    // Live data (arrays may legitimately be empty, e.g. boards with no CI).
+    setData({
+      pipelines: pipelines.data ?? [],
+      gates: gates.data ?? [],
+      environments: envs.data ?? [],
+      deployments: deployments.data ?? [],
+      agents: agents.data ?? [],
+      tasks: tasks.data ?? [],
+    });
+    setSource("live");
+    setError(null);
   }, [projectId]);
 
   useEffect(() => {
     load();
 
-    // Poll for live updates. WebSocket/SSE aren't used in local dev (the adapter
-    // serves REST + SSE only, and polling is the most robust cross-origin path).
-    // Set NEXT_PUBLIC_POLL_MS=0 to disable.
-    const pollMs = Number(process.env['NEXT_PUBLIC_POLL_MS'] ?? "15000");
+    // Poll for live updates. WebSocket/SSE aren't used in local dev (the
+    // adapter serves REST only for pillar data, and polling is the most
+    // robust cross-origin path). Set NEXT_PUBLIC_POLL_MS=0 to disable.
+    const pollMs = Number(process.env["NEXT_PUBLIC_POLL_MS"] ?? "15000");
     if (!pollMs || Number.isNaN(pollMs)) return;
 
     const id = setInterval(load, pollMs);

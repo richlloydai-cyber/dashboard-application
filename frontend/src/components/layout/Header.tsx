@@ -12,7 +12,7 @@ import type { TimeRange } from "@/types";
 
 const TIME_RANGES: TimeRange[] = ["1h", "6h", "24h", "7d", "30d", "90d"];
 
-export function Header({ dataSource = "loading" }: { dataSource?: "live" | "mock" | "loading" }) {
+export function Header({ dataSource = "loading" }: { dataSource?: "live" | "error" | "loading" }) {
   const setSidebarOpen = useProjectStore((s) => s.setSidebarOpen);
   const sidebarOpen = useProjectStore((s) => s.ui.sidebarOpen);
   const wsConnected = useWsConnected();
@@ -74,18 +74,18 @@ export function Header({ dataSource = "loading" }: { dataSource?: "live" | "mock
           <div
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs",
-              dataSource === "live" ? "bg-success-500/20" : dataSource === "mock" ? "bg-warning-500/20" : "bg-white/10"
+              dataSource === "live" ? "bg-success-500/20" : dataSource === "error" ? "bg-danger-500/20" : "bg-white/10"
             )}
             title={
               dataSource === "live"
                 ? "Serving live Hermes project data"
-                : dataSource === "mock"
-                  ? "Backend unreachable — showing sample data"
+                : dataSource === "error"
+                  ? "Live adapter unreachable — no data"
                   : "Loading…"
             }
           >
             <span className="hidden sm:inline">
-              {dataSource === "live" ? "Live data" : dataSource === "mock" ? "Sample data" : "…"}
+              {dataSource === "live" ? "Live data" : dataSource === "error" ? "No live data" : "…"}
             </span>
           </div>
 

@@ -7,7 +7,7 @@
 // ============================================================
 
 import { GitBranch, GitCommit, Hammer, Rocket, Bot } from "lucide-react";
-import { Card, Badge, EmptyState } from "@/components/ui";
+import { Card, Badge, EmptyState, Button } from "@/components/ui";
 import { BuildPipelinePanel } from "./BuildPipelinePanel";
 import { QualityGatePanel } from "./QualityGatePanel";
 import { DeploymentPanel } from "./DeploymentPanel";
@@ -33,7 +33,7 @@ function PillarHeading({ icon: Icon, title, subtitle }: { icon: typeof Hammer; t
 export function ProjectView() {
   const project = useSelectedProject();
   const pillar = useSelectedPillar();
-  const { data } = useProjectPillarData(project?.id);
+  const { data, source, error, reload } = useProjectPillarData(project?.id);
 
   if (!project) {
     return (
@@ -45,7 +45,30 @@ export function ProjectView() {
     );
   }
 
-  // Live data from the Hermes adapter (mock fallback handled in the hook).
+  // Live adapter unreachable for this project — show it explicitly rather
+  // than empty "no X configured" panels that imply the data is known.
+  if (source === "error") {
+    return (
+      <Card>
+        <div className="flex flex-col items-start gap-3 py-4">
+          <div className="flex items-center gap-2 text-danger-700">
+            <GitBranch className="h-5 w-5" />
+            <span className="font-semibold">Live data unavailable</span>
+          </div>
+          <p className="text-sm text-text-secondary">
+            Couldn’t reach the Hermes adapter for{" "}
+            <code className="rounded bg-neutral-100 px-1">{project.id}</code>.
+            {error ? ` (${error})` : ""} Verify the adapter is running on :3801.
+          </p>
+          <Button size="sm" variant="outline" onClick={() => reload()}>
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  // Live data from the Hermes adapter (live-only; no mock fallback).
   const pipelines = data?.pipelines ?? [];
   const gates = data?.gates ?? [];
   const environments = data?.environments ?? [];

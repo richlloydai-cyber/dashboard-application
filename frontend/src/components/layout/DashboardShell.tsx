@@ -14,7 +14,7 @@ import { useLiveProjects } from "@/hooks/useLiveProjects";
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const selectedProject = useProjectStore((s) => s.selectedProject);
 
-  // Load projects from the live Hermes adapter (falls back to mock data).
+  // Load projects exclusively from the live Hermes adapter.
   const { source } = useLiveProjects();
 
   // Open the live WS connection (auto-reconnects). Harmless if backend absent.
