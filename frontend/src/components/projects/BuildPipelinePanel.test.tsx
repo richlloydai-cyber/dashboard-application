@@ -12,7 +12,7 @@ const pipe = (over: Partial<BuildPipeline> = {}): BuildPipeline => ({
     startedAt: "2026-01-01T00:00:00Z",
     stages: [
       { stageId: "s1", name: "typecheck", status: "success", startedAt: "2026-01-01T00:00:00Z", jobs: [] },
-      { stageId: "s2", name: "build", status: "running", jobs: [] },
+      { stageId: "s2", name: "build", status: "running", startedAt: "2026-01-01T00:00:00Z", jobs: [] },
     ],
     artifacts: [],
   },
