@@ -34,7 +34,7 @@ describe("useWebSocket", () => {
       close = fakeWs.close;
     }
     (globalThis as any).WebSocket = FakeSocket;
-    process.env.NEXT_PUBLIC_WS_URL = "ws://localhost:9999";
+    process.env["NEXT_PUBLIC_WS_URL"] = "ws://localhost:9999";
 
     const onConnect = vi.fn();
     const { result } = renderHook(() => useWebSocket({ projectId: "coder-board", autoConnect: true, onConnect }));
@@ -51,7 +51,7 @@ describe("useWebSocket", () => {
 
     act(() => { ws.onclose?.(); });
     expect(result.current.isConnected).toBe(false);
-    delete process.env.NEXT_PUBLIC_WS_URL;
+    delete process.env["NEXT_PUBLIC_WS_URL"];
   });
 
   it("send is a no-op when socket not open", () => {
@@ -70,16 +70,16 @@ describe("useEventSource", () => {
       close = fake.close;
     }
     (globalThis as any).EventSource = FakeES;
-    process.env.NEXT_PUBLIC_HERMES_API = "http://localhost:3801";
+    process.env["NEXT_PUBLIC_HERMES_API"] = "http://localhost:3801";
 
     const onMessage = vi.fn();
-    const { result } = renderHook(() => useEventSource({ projectId: "coder-board", onMessage }));
+    const { result } = renderHook(() => useEventSource("coder-board", { onMessage }));
     const es: any = (globalThis as any).__es;
     act(() => { es.onopen?.(); });
     expect(result.current.isConnected).toBe(true);
     act(() => { es.onmessage?.({ data: "hello" }); });
     expect(onMessage).toHaveBeenCalled();
 
-    delete process.env.NEXT_PUBLIC_HERMES_API;
+    delete process.env["NEXT_PUBLIC_HERMES_API"];
   });
 });

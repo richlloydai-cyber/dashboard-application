@@ -1,4 +1,6 @@
-// Vitest global types + jsdom globals for the test environment.
-// Referenced by tsconfig's "types" so `tsc --noEmit` (CI typecheck)
-// and the editor resolve describe/it/expect/vi + DOM fetch.
+// Test-environment type shims.
+// Provides vitest globals (describe/it/expect/vi) + jest-dom matchers
+// for tsconfig.test.json. Must be a real module (export {}).
+export {};
 /// <reference types="vitest/globals" />
+/// <reference types="@testing-library/jest-dom" />

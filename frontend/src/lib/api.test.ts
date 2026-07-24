@@ -107,7 +107,6 @@ describe("api client", () => {
 
   describe("websocket (browser only)", () => {
     it("connect opens a socket and dispatches messages", async () => {
-      const handlers: Record<string, ((e: any) => void)[]> = {};
       const fakeWs = {
         readyState: 0,
         send: vi.fn(),
