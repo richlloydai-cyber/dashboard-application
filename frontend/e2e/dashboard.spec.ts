@@ -25,13 +25,16 @@ test.describe("Hermes dashboard (live, self-contained)", () => {
   test("sidebar lists the live fixture boards", async ({ page }) => {
     await page.goto("/");
     for (const b of BOARDS) {
-      await expect(page.getByText(b.name, { exact: false })).toBeVisible();
+      // The sidebar project button is the authoritative occurrence.
+      await expect(
+        page.getByRole("button", { name: b.name, exact: false })
+      ).toBeVisible();
     }
   });
 
   test("selecting a board opens its three pillars", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("E2E Coder", { exact: false }).click();
+    await page.getByRole("button", { name: "E2E Coder", exact: false }).click();
     await expect(page.getByRole("button", { name: "Build Pipelines" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Quality Gates" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Deployments" })).toBeVisible();
@@ -40,7 +43,7 @@ test.describe("Hermes dashboard (live, self-contained)", () => {
 
   test("pillar navigation switches the active view", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("E2E Coder", { exact: false }).click();
+    await page.getByRole("button", { name: "E2E Coder", exact: false }).click();
     await page.getByRole("button", { name: "Build Pipelines" }).click();
     // The build pillar shows either a real pipeline or the honest empty state.
     await expect(
@@ -50,7 +53,7 @@ test.describe("Hermes dashboard (live, self-contained)", () => {
 
   test("board detail shows live task data", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("E2E Coder", { exact: false }).click();
+    await page.getByRole("button", { name: "E2E Coder", exact: false }).click();
     await page.getByRole("button", { name: "Agent Tasks" }).click();
     // One of the fixture tasks (real, from kanban.db).
     await expect(page.getByText("Add rate-limiting to gateway")).toBeVisible();
