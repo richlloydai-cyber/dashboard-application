@@ -14,6 +14,13 @@ import type {
 
 describe("useProjectStore (coverage gaps)", () => {
   beforeEach(() => {
+    // Clear any persisted state from a prior run (persist middleware uses
+    // localStorage; stale data would rehydrate after reset()).
+    try {
+      localStorage.clear();
+    } catch {
+      /* jsdom may lack localStorage; harmless */
+    }
     useProjectStore.getState().reset();
   });
 
