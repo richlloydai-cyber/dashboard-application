@@ -27,7 +27,7 @@ describe("api client", () => {
     expect(res.error).toBeNull();
     expect(res.meta.version).toBe("1.0");
     expect((fetch as any)).toHaveBeenCalledWith(
-      "/projects/api/projects",
+      "http://localhost:3801/projects",
       expect.objectContaining({ credentials: "include" })
     );
   });
@@ -74,14 +74,14 @@ describe("api client", () => {
     await api.rollbackDeployment("coder-board", "d1");
     await api.approveDeployment("coder-board", "d1");
     const calls = (fetch as any).mock.calls.map((c: any[]) => c[0]);
-    expect(calls).toContain("/projects/api/projects/coder-board");
-    expect(calls).toContain("/projects/api/projects/coder-board/pipelines");
-    expect(calls).toContain("/projects/api/projects/coder-board/pipelines/p1/runs?limit=5");
-    expect(calls).toContain("/projects/api/projects/coder-board/pipelines/p1/runs/r1");
-    expect(calls).toContain("/projects/api/projects/coder-board/pipelines/p1/trigger");
-    expect(calls).toContain("/projects/api/projects/coder-board/quality-gates/g1/scan");
-    expect(calls).toContain("/projects/api/projects/coder-board/environments/dev/deploy");
-    expect(calls).toContain("/projects/api/projects/coder-board/deployments/d1/rollback");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/pipelines");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/pipelines/p1/runs?limit=5");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/pipelines/p1/runs/r1");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/pipelines/p1/trigger");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/quality-gates/g1/scan");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/environments/dev/deploy");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/deployments/d1/rollback");
   });
 
   it("passes query params for agent-tasks + statuses", async () => {
@@ -91,17 +91,17 @@ describe("api client", () => {
     await api.triggerAgentTask("coder-board", "custom", { x: 1 });
     await api.cancelAgentTask("coder-board", "t1");
     const calls = (fetch as any).mock.calls.map((c: any[]) => c[0]);
-    expect(calls).toContain("/projects/api/projects/coder-board/agent-tasks?limit=3&status=running");
-    expect(calls).toContain("/projects/api/projects/coder-board/agents");
-    expect(calls).toContain("/projects/api/projects/coder-board/agent-tasks");
-    expect(calls).toContain("/projects/api/projects/coder-board/agent-tasks/t1/cancel");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/agent-tasks?limit=3&status=running");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/agents");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/agent-tasks");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/agent-tasks/t1/cancel");
   });
 
   it("getAgentTask fetches a single task by id", async () => {
     (fetch as any).mockResolvedValue(ok({ data: { id: "t1" } }));
     await api.getAgentTask("coder-board", "t1");
     expect((fetch as any).mock.calls.map((c: any[]) => c[0])).toContain(
-      "/projects/api/projects/coder-board/agent-tasks/t1"
+      "http://localhost:3801/projects/coder-board/agent-tasks/t1"
     );
   });
 
@@ -110,8 +110,8 @@ describe("api client", () => {
     await api.getPillarData("coder-board", "build", "7d");
     await api.getProjectDashboard("coder-board", "30d");
     const calls = (fetch as any).mock.calls.map((c: any[]) => c[0]);
-    expect(calls).toContain("/projects/api/projects/coder-board/pillars/build?range=7d");
-    expect(calls).toContain("/projects/api/projects/coder-board/dashboard?range=30d");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/pillars/build?range=7d");
+    expect(calls).toContain("http://localhost:3801/projects/coder-board/dashboard?range=30d");
   });
 
   describe("websocket (browser only)", () => {
