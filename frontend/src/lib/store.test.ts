@@ -19,11 +19,25 @@ describe("useProjectStore (coverage gaps)", () => {
 
   // addProject / updateProject / removeProject
   it("add/update/remove project", () => {
-    useProjectStore.getState().addProject({ id: "p1", displayName: "P1" } as Project);
+    const proj: Project = {
+      id: "p1",
+      name: "P1",
+      displayName: "P1",
+      description: "",
+      repository: { provider: "github", url: "" },
+      status: "active",
+      pillar: "build",
+      createdAt: "",
+      updatedAt: "",
+      lastActivity: "",
+      metadata: { language: "", framework: "" },
+    };
+    useProjectStore.getState().addProject(proj);
     expect(useProjectStore.getState().projects).toHaveLength(1);
 
-    useProjectStore.getState().updateProject("p1", { displayName: "P1-upd" });
-    expect(useProjectStore.getState().projects[0]?.displayName).toBe("P1-upd");
+    useProjectStore.getState().updateProject("p1", { displayName: "P1-upd" } as Partial<Project>);
+    const updated = useProjectStore.getState().projects[0]!;
+    expect(updated.displayName).toBe("P1-upd");
     expect(useProjectStore.getState().selectedProject?.displayName).toBe("P1-upd");
 
     useProjectStore.getState().removeProject("p1");
