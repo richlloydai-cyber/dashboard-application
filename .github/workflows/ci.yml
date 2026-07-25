@@ -90,9 +90,12 @@ jobs:
         # legacy-peer-deps avoids any transient conflict.
         run: npm install --no-save --legacy-peer-deps @playwright/test@1.51.1 && npx playwright install --with-deps chromium
 
-      - name: Build app (subpath + same-origin API proxy)
+      - name: Build app (subpath + direct adapter API)
         env:
           NEXT_PUBLIC_DASHBOARD_PATH: /projects
+          # Frontend talks DIRECTLY to the live adapter (CORS-enabled), exactly
+          # like the production tunnel mode — no dependence on Next rewrites.
+          NEXT_PUBLIC_API_URL: http://localhost:3801
           NEXT_PUBLIC_HERMES_API: http://localhost:3801
         run: npm run build
 
