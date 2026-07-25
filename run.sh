@@ -53,8 +53,13 @@ case "$cmd" in
     echo "  Starting Next.js dev on :3800 …"
     cd frontend
     [ -d node_modules ] || npm install
-    # In dev, Next rewrites /projects/api/* → adapter (see next.config.mjs)
-    NEXT_PUBLIC_HERMES_API="http://localhost:3801" npm run dev
+    # Point the frontend straight at the just-started adapter (CORS-enabled).
+    # This is what makes the dashboard render LIVE data locally with no tunnel:
+    # previously NEXT_PUBLIC_API_URL was left unset, so the app fell back to the
+    # nginx-only "/projects/api" path and showed nothing.
+    NEXT_PUBLIC_API_URL="http://localhost:3801" \
+    NEXT_PUBLIC_HERMES_API="http://localhost:3801" \
+      npm run dev
     ;;
 
   *)

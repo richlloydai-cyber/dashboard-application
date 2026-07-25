@@ -20,9 +20,14 @@ import type {
   TimeRange,
 } from "@/types";
 
-// In local standalone mode, set NEXT_PUBLIC_API_URL to the adapter/tunnel URL
-// (e.g. https://xxx.trycloudflare.com). Behind nginx it stays "/projects/api".
-const API_BASE = process.env['NEXT_PUBLIC_API_URL'] || "/projects/api";
+// In local standalone mode the Hermes adapter runs beside the dashboard
+// (./run.sh local starts it on :3801), so default to that — the dashboard
+// then shows live data out of the box with no extra env wiring. Behind nginx
+// the build args set NEXT_PUBLIC_API_URL="/projects/api"; a remote/tunnel
+// deployment sets NEXT_PUBLIC_API_URL to its tunnel URL. There is intentionally
+// no mock fallback: when the adapter is unreachable the UI shows an explicit
+// "No live data" state rather than stale fake figures.
+const API_BASE = process.env['NEXT_PUBLIC_API_URL'] || "http://localhost:3801";
 const WS_URL = process.env['NEXT_PUBLIC_WS_URL'] || "/projects/ws";
 
 class ApiClient {
