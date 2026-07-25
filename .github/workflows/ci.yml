@@ -90,11 +90,10 @@ jobs:
         # legacy-peer-deps avoids any transient conflict.
         run: npm install --no-save --legacy-peer-deps @playwright/test@1.51.1 && npx playwright install --with-deps chromium
 
-      - name: Build app (subpath + direct adapter API)
+      - name: Build app (direct adapter API, served at root)
         env:
-          NEXT_PUBLIC_DASHBOARD_PATH: /projects
           # Frontend talks DIRECTLY to the live adapter (CORS-enabled), exactly
-          # like the production tunnel mode — no dependence on Next rewrites.
+          # like the production tunnel mode — no basePath/subpath needed for E2E.
           NEXT_PUBLIC_API_URL: http://localhost:3801
           NEXT_PUBLIC_HERMES_API: http://localhost:3801
         run: npm run build
@@ -104,7 +103,7 @@ jobs:
       # background processes spawned in a prior step).
       - name: Seed fixtures + run adapter + dashboard + E2E
         env:
-          BASE_URL: http://localhost:3800/projects
+          BASE_URL: http://localhost:3800
         run: |
           set -u
           # 1) Seed fixture boards into HERMES_HOME for the adapter.
@@ -124,7 +123,7 @@ jobs:
           PORT=3800 npm run start &
           NEXT_PID=$!
           for i in $(seq 1 40); do
-            if curl -fsS http://localhost:3800/projects >/dev/null 2>&1; then
+            if curl -fsS http://localhost:3800/ >/dev/null 2>&1; then
               echo "dashboard up"; break
             fi
             sleep 1
