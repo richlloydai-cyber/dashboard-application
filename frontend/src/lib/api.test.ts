@@ -97,6 +97,14 @@ describe("api client", () => {
     expect(calls).toContain("/projects/api/projects/coder-board/agent-tasks/t1/cancel");
   });
 
+  it("getAgentTask fetches a single task by id", async () => {
+    (fetch as any).mockResolvedValue(ok({ data: { id: "t1" } }));
+    await api.getAgentTask("coder-board", "t1");
+    expect((fetch as any).mock.calls.map((c: any[]) => c[0])).toContain(
+      "/projects/api/projects/coder-board/agent-tasks/t1"
+    );
+  });
+
   it("getPillarData + getProjectDashboard build range query", async () => {
     (fetch as any).mockResolvedValue(ok({ data: {} }));
     await api.getPillarData("coder-board", "build", "7d");
