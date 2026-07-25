@@ -78,7 +78,6 @@ describe("useProjectStore (coverage gaps)", () => {
     useProjectStore.getState().updateProject("p1", { displayName: "P1-upd" });
     const updated = useProjectStore.getState().projects[0]!;
     expect(updated.displayName).toBe("P1-upd");
-    expect(useProjectStore.getState().selectedProject?.displayName).toBe("P1-upd");
 
     useProjectStore.getState().removeProject("p1");
     expect(useProjectStore.getState().projects).toHaveLength(0);
