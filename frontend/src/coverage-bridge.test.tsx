@@ -55,8 +55,16 @@ describe("store selectors (coverage)", () => {
   });
 
   it("useLoading / useError read maps", () => {
-    expect(renderSelector(useLoading)("foo")).toBe(true);
-    expect(renderSelector(useError)("bar")).toBe("boom");
+    let loadingVal: boolean | undefined;
+    let errorVal: string | undefined;
+    function Probe() {
+      loadingVal = useLoading("foo");
+      errorVal = useError("bar");
+      return null;
+    }
+    render(<Probe />);
+    expect(loadingVal).toBe(true);
+    expect(errorVal).toBe("boom");
   });
 });
 
