@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+import path from "node:path";
 // basePath/assetPrefix default to "" so a local `npm run dev` serves at the
 // root (http://localhost:3000). Set NEXT_PUBLIC_DASHBOARD_PATH=/projects only
 // for the nginx/Docker deployment where the app lives under a subpath.
@@ -71,6 +71,13 @@ const nextConfig = {
 
   // Webpack configuration
   webpack: (config, { isServer }) => {
+    // Ensure the @/ alias resolves reliably across Next versions
+    // (tsconfig paths alone can be ignored by the Next plugin).
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(process.cwd(), "src"),
+    };
+
     // WebSocket-related node builtins are not needed in the browser bundle.
     if (!isServer) {
       config.resolve.fallback = {

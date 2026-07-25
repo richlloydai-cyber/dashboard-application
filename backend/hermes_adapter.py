@@ -364,7 +364,12 @@ class Handler(BaseHTTPRequestHandler):
         body = json.dumps(obj).encode() if ctype == "application/json" else obj.encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # Reflect the caller's Origin and allow credentials so the browser
+        # accepts cross-origin requests made with `credentials: "include"`
+        # (the dashboard fetches the adapter from a different port/origin).
+        origin = self.headers.get("Origin")
+        self.send_header("Access-Control-Allow-Origin", origin or "*")
+        self.send_header("Access-Control-Allow-Credentials", "true")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Content-Length", str(len(body)))
@@ -372,7 +377,14 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_OPTIONS(self):
-        self._send({}, 204)
+        # Preflight: echo the requesting Origin and flag credentials.
+        origin = self.headers.get("Origin")
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", origin or "*")
+        self.send_header("Access-Control-Allow-Credentials", "true")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def do_GET(self):
         path = urlparse(self.path).path.strip("/")
