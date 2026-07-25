@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { useProjectStore } from "@/lib/store";
 import type {
   Project,
@@ -12,37 +12,70 @@ import type {
   AgentStatus,
 } from "@/types";
 
+const fullProject = (id: string, name: string): Project => ({
+  id,
+  name,
+  displayName: name,
+  description: "",
+  repository: { provider: "github", url: "" },
+  status: "active",
+  pillar: "build",
+  createdAt: "",
+  updatedAt: "",
+  lastActivity: "",
+  metadata: { language: "", framework: "" },
+});
+
+const emptyPillarData = () => ({
+  pipelines: [],
+  gates: [],
+  environments: [],
+  deployments: [],
+  agents: [],
+  tasks: [],
+});
+
 describe("useProjectStore (coverage gaps)", () => {
   beforeEach(() => {
-    // Clear any persisted state from a prior run (persist middleware uses
-    // localStorage; stale data would rehydrate after reset()).
+    // Clear persisted state + reset to a known-clean baseline without
+    // going through the persist middleware's rehydration path.
     try {
-      localStorage.clear();
+      (globalThis as any).localStorage?.clear();
     } catch {
-      /* jsdom may lack localStorage; harmless */
+      /* no localStorage in jsdom — harmless */
     }
-    useProjectStore.getState().reset();
+    useProjectStore.setState({
+      projects: [],
+      selectedProject: null,
+      ui: {
+        selectedProjectId: null,
+        selectedPillar: "overview",
+        timeRange: "24h",
+        refreshInterval: 30000,
+        sidebarOpen: true,
+        theme: "system",
+      },
+      pillarCache: new Map(),
+      pipelines: new Map(),
+      buildRuns: new Map(),
+      qualityGates: new Map(),
+      qualityRuns: new Map(),
+      environments: new Map(),
+      deployments: new Map(),
+      agentTasks: new Map(),
+      agentStatuses: new Map(),
+      wsConnected: false,
+      loading: {},
+      errors: {},
+    });
   });
 
   // addProject / updateProject / removeProject
   it("add/update/remove project", () => {
-    const proj: Project = {
-      id: "p1",
-      name: "P1",
-      displayName: "P1",
-      description: "",
-      repository: { provider: "github", url: "" },
-      status: "active",
-      pillar: "build",
-      createdAt: "",
-      updatedAt: "",
-      lastActivity: "",
-      metadata: { language: "", framework: "" },
-    };
-    useProjectStore.getState().addProject(proj);
+    useProjectStore.getState().addProject(fullProject("p1", "P1"));
     expect(useProjectStore.getState().projects).toHaveLength(1);
 
-    useProjectStore.getState().updateProject("p1", { displayName: "P1-upd" } as Partial<Project>);
+    useProjectStore.getState().updateProject("p1", { displayName: "P1-upd" });
     const updated = useProjectStore.getState().projects[0]!;
     expect(updated.displayName).toBe("P1-upd");
     expect(useProjectStore.getState().selectedProject?.displayName).toBe("P1-upd");
@@ -72,62 +105,35 @@ describe("useProjectStore (coverage gaps)", () => {
 
   // Pillar cache: getPillarData hit + invalidatePillarCache both branches
   it("covers pillar cache hit and invalidate all", () => {
-    // setPillarData sets cache
-    useProjectStore.getState().setPillarData("p1", "build", {
-      pipelines: [],
-      gates: [],
-      environments: [],
-      deployments: [],
-      agents: [],
-      tasks: [],
-    });
-    // getPillarData hit (cache < 60s)
+    useProjectStore.getState().setPillarData("p1", "build", emptyPillarData());
     const cached = useProjectStore.getState().getPillarData("p1", "build");
     expect(cached).toBeDefined();
 
-    // invalidatePillarCache with pillar=undefined deletes ALL pillars
-    useProjectStore.getState().setPillarData("p1", "agent", {
-      pipelines: [],
-      gates: [],
-      environments: [],
-      deployments: [],
-      agents: [],
-      tasks: [],
-    });
-    useProjectStore.getState().invalidatePillarCache("p1"); // no pillar arg
+    useProjectStore.getState().setPillarData("p1", "agent", emptyPillarData());
+    useProjectStore.getState().invalidatePillarCache("p1"); // no pillar arg → delete all
     expect(useProjectStore.getState().getPillarData("p1", "build")).toBeNull();
     expect(useProjectStore.getState().getPillarData("p1", "agent")).toBeNull();
   });
 
   // Build data: setPipelines, setBuildRuns, updateBuildRun (update+insert)
   it("covers build data (set + update existing + new)", () => {
-    useProjectStore.getState().setPipelines("p1", [
-      { id: "pipe", name: "Main" } as BuildPipeline,
-    ]);
+    useProjectStore.getState().setPipelines("p1", [{ id: "pipe", name: "Main" } as BuildPipeline]);
     expect(useProjectStore.getState().pipelines.get("p1")).toHaveLength(1);
 
-    // updateBuildRun: existing
-    useProjectStore.getState().setBuildRuns("pipe", [
-      { id: "r1", status: "success" } as BuildRun,
-    ]);
+    useProjectStore.getState().setBuildRuns("pipe", [{ id: "r1", status: "success" } as BuildRun]);
     useProjectStore.getState().updateBuildRun("pipe", { id: "r1", status: "failed" } as BuildRun);
     expect(useProjectStore.getState().buildRuns.get("pipe")?.[0]?.status).toBe("failed");
 
-    // updateBuildRun: new (push)
     useProjectStore.getState().updateBuildRun("pipe", { id: "r2", status: "running" } as BuildRun);
     expect(useProjectStore.getState().buildRuns.get("pipe")?.[0]?.id).toBe("r2");
   });
 
   // Quality data: setQualityGates + setQualityRuns + updateQualityRun (update+insert)
   it("covers quality data (set + update existing + new)", () => {
-    useProjectStore.getState().setQualityGates("p1", [
-      { id: "gate", name: "Test" } as QualityGate,
-    ]);
+    useProjectStore.getState().setQualityGates("p1", [{ id: "gate", name: "Test" } as QualityGate]);
     expect(useProjectStore.getState().qualityGates.get("p1")).toHaveLength(1);
 
-    useProjectStore.getState().setQualityRuns("gate", [
-      { id: "qr1", status: "passed" } as QualityRun,
-    ]);
+    useProjectStore.getState().setQualityRuns("gate", [{ id: "qr1", status: "passed" } as QualityRun]);
     useProjectStore.getState().updateQualityRun("gate", { id: "qr1", status: "failed" } as QualityRun);
     expect(useProjectStore.getState().qualityRuns.get("gate")?.[0]?.status).toBe("failed");
 
@@ -137,42 +143,27 @@ describe("useProjectStore (coverage gaps)", () => {
 
   // Deployment data: setEnvironments, setDeployments, updateDeployment
   it("covers deployment data", () => {
-    useProjectStore.getState().setEnvironments("p1", [
-      { id: "env", name: "prod" } as Environment,
-    ]);
+    useProjectStore.getState().setEnvironments("p1", [{ id: "env", name: "prod" } as Environment]);
     expect(useProjectStore.getState().environments.get("p1")).toHaveLength(1);
 
-    // setDeployments for projectId
-    useProjectStore.getState().setDeployments("p1", [
-      { id: "d1", version: "v1.0.0" } as Deployment,
-    ]);
-
-    // updateDeployment updates in-place
+    useProjectStore.getState().setDeployments("p1", [{ id: "d1", version: "v1.0.0" } as Deployment]);
     useProjectStore.getState().updateDeployment({ id: "d1", version: "v2.0.0" } as Deployment);
     expect(useProjectStore.getState().deployments.get("p1")?.[0]?.version).toBe("v2.0.0");
   });
 
   // Agent data: setAgentTasks, setAgentStatuses + updateAgentTask + updateAgentStatus (update+insert)
   it("covers agent data (update existing + new status)", () => {
-    useProjectStore.getState().setAgentTasks("p1", [
-      { id: "t1", status: "running" } as AgentTask,
-    ]);
+    useProjectStore.getState().setAgentTasks("p1", [{ id: "t1", status: "running" } as AgentTask]);
     expect(useProjectStore.getState().agentTasks.get("p1")).toHaveLength(1);
 
-    // updateAgentTask: existing
     useProjectStore.getState().updateAgentTask("p1", { id: "t1", status: "completed" } as AgentTask);
     expect(useProjectStore.getState().agentTasks.get("p1")?.[0]?.status).toBe("completed");
 
-    // setAgentStatuses
-    useProjectStore.getState().setAgentStatuses("p1", [
-      { id: "a1", status: "idle" } as AgentStatus,
-    ]);
+    useProjectStore.getState().setAgentStatuses("p1", [{ id: "a1", status: "idle" } as AgentStatus]);
 
-    // updateAgentStatus: update existing
     useProjectStore.getState().updateAgentStatus("p1", { id: "a1", status: "busy" } as AgentStatus);
     expect(useProjectStore.getState().agentStatuses.get("p1")?.[0]?.status).toBe("busy");
 
-    // updateAgentStatus: add new (push)
     useProjectStore.getState().updateAgentStatus("p1", { id: "a2", status: "error" } as AgentStatus);
     expect(useProjectStore.getState().agentStatuses.get("p1")?.length).toBe(2);
   });
