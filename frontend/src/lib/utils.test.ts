@@ -111,6 +111,10 @@ describe("pillar color helpers", () => {
     expect(getPillarTextColor("build")).toContain("text-blue-600");
     expect(getPillarBgColor("build")).toContain("bg-blue-50");
   });
+  it("text + bg fall back to neutral for unknown pillar", () => {
+    expect(getPillarTextColor("???")).toBe("text-neutral-600");
+    expect(getPillarBgColor("???")).toBe("bg-neutral-50");
+  });
 });
 
 describe("debounce / throttle", () => {

@@ -34,8 +34,15 @@ describe("<DeploymentPanel />", () => {
     expect(screen.getByText(/No deployments/)).toBeInTheDocument();
   });
 
-  it("handles multiple deployments", () => {
-    render(<DeploymentPanel environments={[env()]} deployments={[dep(), dep({ id: "d2", version: "v2" })]} />);
-    expect(screen.getByText("v2")).toBeInTheDocument();
+  it("renders env url + duration + plural replicas", () => {
+    render(
+      <DeploymentPanel
+        environments={[env({ id: "prod", name: "production", type: "production", replicas: 3, url: "https://prod.example.com" })]}
+        deployments={[dep({ duration: 42000 })]}
+      />
+    );
+    expect(screen.getByText(/prod\.example\.com/)).toBeInTheDocument();
+    expect(screen.getByText(/replicas/)).toBeInTheDocument();
+    expect(screen.getByText(/42\.0s/)).toBeInTheDocument();
   });
 });
