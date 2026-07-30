@@ -23,6 +23,9 @@ interface FieldErrors {
   password?: string;
 }
 
+// Email validation regex - matches standard email format
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +38,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     const errors: FieldErrors = {};
     if (!email.trim()) {
       errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    } else if (!EMAIL_REGEX.test(email.trim())) {
       errors.email = "Enter a valid email";
     }
     if (!password) {
@@ -76,7 +79,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           setEmail(e.target.value);
           if (fieldErrors.email) setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; });
         }}
-        error={fieldErrors.email ?? undefined}
+        error={fieldErrors.email}
         data-testid="email-input"
       />
       <Input
@@ -87,7 +90,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           setPassword(e.target.value);
           if (fieldErrors.password) setFieldErrors((prev) => { const next = { ...prev }; delete next.password; return next; });
         }}
-        error={fieldErrors.password ?? undefined}
+        error={fieldErrors.password}
         data-testid="password-input"
       />
       <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
@@ -108,5 +111,24 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         Sign in
       </Button>
     </form>
+  );
+}
+
+// Default export for Next.js App Router
+export default function Page() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-neutral-50">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-6 shadow-md">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Sign in</h1>
+          <p className="text-sm text-text-secondary">
+            Enter your email to sign in to your account
+          </p>
+        </div>
+        <LoginPage onLogin={async () => {
+          // Default login handler - will be replaced by actual auth logic
+        }} />
+      </div>
+    </div>
   );
 }
