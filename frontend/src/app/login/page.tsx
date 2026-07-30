@@ -79,7 +79,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           setEmail(e.target.value);
           if (fieldErrors.email) setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; });
         }}
-        error={fieldErrors.email}
+        {...(fieldErrors.email ? { error: fieldErrors.email } : {})}
         data-testid="email-input"
       />
       <Input
@@ -90,7 +90,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           setPassword(e.target.value);
           if (fieldErrors.password) setFieldErrors((prev) => { const next = { ...prev }; delete next.password; return next; });
         }}
-        error={fieldErrors.password}
+        {...(fieldErrors.password ? { error: fieldErrors.password } : {})}
         data-testid="password-input"
       />
       <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
