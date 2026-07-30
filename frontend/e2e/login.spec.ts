@@ -13,8 +13,8 @@ test.describe("Login Page E2E Tests", () => {
       // Navigate to login page
       await page.goto("/login");
 
-      // Fill in credentials
-      await page.getByLabel("Email").fill("username");
+      // Fill in credentials (using valid email format for testing)
+      await page.getByLabel("Email").fill("username@test.com");
       await page.getByLabel("Password").fill("r1card0@lv426");
 
       // Submit form
@@ -87,7 +87,7 @@ test.describe("Login Page E2E Tests", () => {
     test("Session persistence: Reload page, remain authenticated", async ({ page }) => {
       // Login
       await page.goto("/login");
-      await page.getByLabel("Email").fill("username");
+      await page.getByLabel("Email").fill("username@test.com");
       await page.getByLabel("Password").fill("r1card0@lv426");
       await page.getByRole("button", { name: /sign in/i }).click();
 
@@ -108,7 +108,7 @@ test.describe("Login Page E2E Tests", () => {
     test("Logout clears auth state", async ({ page }) => {
       // Login first
       await page.goto("/login");
-      await page.getByLabel("Email").fill("username");
+      await page.getByLabel("Email").fill("username@test.com");
       await page.getByLabel("Password").fill("r1card0@lv426");
       await page.getByRole("button", { name: /sign in/i }).click();
       await page.waitForURL("/");

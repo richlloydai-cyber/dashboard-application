@@ -7,8 +7,12 @@ import { describe, it, expect } from "vitest";
 import { mockLogin } from "@/lib/mockAuth";
 
 describe("mockLogin", () => {
-  it("should return true for valid credentials", () => {
+  it("should return true for valid credentials with username", () => {
     expect(mockLogin("username", "r1card0@lv426")).toBe(true);
+  });
+
+  it("should return true for valid credentials with email", () => {
+    expect(mockLogin("username@test.com", "r1card0@lv426")).toBe(true);
   });
 
   it("should return false for invalid password", () => {
@@ -17,6 +21,10 @@ describe("mockLogin", () => {
 
   it("should return false for invalid username", () => {
     expect(mockLogin("wrong", "r1card0@lv426")).toBe(false);
+  });
+
+  it("should return false for invalid email", () => {
+    expect(mockLogin("wrong@test.com", "r1card0@lv426")).toBe(false);
   });
 
   it("should return false for both invalid credentials", () => {
@@ -37,6 +45,10 @@ describe("mockLogin", () => {
 
   it("should handle whitespace-only password", () => {
     expect(mockLogin("username", "   ")).toBe(false);
+  });
+
+  it("should trim whitespace from credentials", () => {
+    expect(mockLogin("  username  ", "  r1card0@lv426  ")).toBe(true);
   });
 
   it("should be case-sensitive for username", () => {

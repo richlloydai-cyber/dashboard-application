@@ -23,9 +23,6 @@ interface FieldErrors {
   password?: string;
 }
 
-// Email validation regex - matches standard email format
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +35,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     const errors: FieldErrors = {};
     if (!email.trim()) {
       errors.email = "Email is required";
-    } else if (!EMAIL_REGEX.test(email.trim())) {
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
       errors.email = "Enter a valid email";
     }
     if (!password) {
