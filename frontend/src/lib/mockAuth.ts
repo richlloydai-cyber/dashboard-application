@@ -12,6 +12,9 @@ const VALID_PASSWORD = "r1card0@lv426";
  * @returns true if credentials are valid, false otherwise
  */
 export const mockLogin = (username: string, password: string): boolean => {
-  // This will be implemented after tests are verified
-  return false;
+  // Trim whitespace and check credentials
+  const trimmedUsername = username.trim();
+  const trimmedPassword = password.trim();
+  
+  return trimmedUsername === VALID_USERNAME && trimmedPassword === VALID_PASSWORD;
 };

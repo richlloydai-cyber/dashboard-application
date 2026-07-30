@@ -22,8 +22,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   error: null,
   login: (credentials) => {
-    // This will be implemented after tests are verified
-    set({ isAuthenticated: true, user: null, error: null });
+    // Store user info on login
+    set({ 
+      isAuthenticated: true, 
+      user: { username: credentials.username, role: "user" }, 
+      error: null 
+    });
   },
   logout: () => {
     set({ isAuthenticated: false, user: null, error: null });
