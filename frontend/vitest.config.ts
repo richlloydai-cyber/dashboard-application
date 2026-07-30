@@ -11,13 +11,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@tests": path.resolve(__dirname, "../tests"),
     },
   },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "../tests/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", ".next", "e2e", "**/e2e/**"],
     coverage: {
       provider: "v8",
