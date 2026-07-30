@@ -5,7 +5,7 @@
 // Primary color #4187ad (primary-500) corporate title bar
 // ============================================================
 
-import { Menu, Bell, RefreshCw, Circle, Search } from "lucide-react";
+import { Menu, Bell, RefreshCw, Circle, Search, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProjectStore, useWsConnected, useTimeRange } from "@/lib/store";
 import type { TimeRange } from "@/types";
@@ -110,12 +110,22 @@ export function Header({ dataSource = "loading" }: { dataSource?: "live" | "erro
           </button>
 
           <button
-            className="relative rounded-lg p-2 text-white/90 transition-colors hover:bg-white/10"
+            className="rounded-lg p-2 text-white/90 transition-colors hover:bg-white/10"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger-400 ring-2 ring-primary-500" />
           </button>
+
+          {/* Login link */}
+          <a
+            href="/login"
+            className="rounded-lg px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
+            aria-label="Login"
+          >
+            <LogIn className="h-4 w-4 inline mr-1.5" />
+            <span className="hidden sm:inline">Login</span>
+          </a>
         </div>
       </div>
     </header>

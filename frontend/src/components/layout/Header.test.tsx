@@ -33,4 +33,11 @@ describe("<Header />", () => {
     render(<Header dataSource="live" />);
     expect(screen.getByText("My Board")).toBeInTheDocument();
   });
+
+  it("has a link to the login page", () => {
+    render(<Header dataSource="live" />);
+    const loginLink = screen.getByRole("link", { name: /login/i });
+    expect(loginLink).toBeInTheDocument();
+    expect(loginLink).toHaveAttribute("href", "/login");
+  });
 });
